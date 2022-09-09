@@ -38,6 +38,7 @@ class XPlaneUdp:
     self.BeaconData = {}
     self.xplaneValues = {}
     self.defaultFreq = 1
+    self.UDP_PORT = 49000
 
   def __del__(self):
     for i in range(len(self.datarefs)):
@@ -218,8 +219,13 @@ if __name__ == '__main__':
     print(beacon)
     print()
     
-    xp.AddDataRef("sim/flightmodel/position/indicated_airspeed", freq=1)
+    xp.AddDataRef("sim/flightmodel/position/indicated_airspeed", freq=10)
     xp.AddDataRef("sim/flightmodel/position/latitude")
+    xp.AddDataRef("sim/flightmodel/position/longitude")
+    xp.AddDataRef("sim/flightmodel/position/elevation")
+    xp.AddDataRef("sim/flightmodel/position/true_theta")
+    xp.AddDataRef("sim/flightmodel/position/true_phi")
+    xp.AddDataRef("sim/flightmodel/position/true_psi")
     
     while True:
       try:
