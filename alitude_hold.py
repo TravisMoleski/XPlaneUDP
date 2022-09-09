@@ -14,14 +14,14 @@ if __name__ == '__main__':
     print(beacon)
     print()
     
-    xp.AddDataRef("sim/flightmodel/position/indicated_airspeed", freq=100)
-    xp.AddDataRef("sim/flightmodel/position/latitude")
-    xp.AddDataRef("sim/flightmodel/position/longitude")
-    xp.AddDataRef("sim/flightmodel/misc/h_ind")
+    xp.AddDataRef("sim/flightmodel/position/indicated_airspeed", freq=1000)
+    xp.AddDataRef("sim/flightmodel/position/latitude", freq=1000)
+    xp.AddDataRef("sim/flightmodel/position/longitude", freq=1000)
+    xp.AddDataRef("sim/flightmodel/misc/h_ind",freq=1000)
 
-    xp.AddDataRef("sim/flightmodel/position/true_theta")
-    xp.AddDataRef("sim/flightmodel/position/true_phi")
-    xp.AddDataRef("sim/flightmodel/position/true_psi")
+    xp.AddDataRef("sim/flightmodel/position/true_theta", freq=1000)
+    xp.AddDataRef("sim/flightmodel/position/true_phi", freq=1000)
+    xp.AddDataRef("sim/flightmodel/position/true_psi", freq=1000)
 
     heading_control_dataref = "sim/joystick/FC_hdng"
     pitch_control_dataref = "sim/joystick/FC_ptch"
@@ -59,15 +59,15 @@ if __name__ == '__main__':
     roll_dataref_value = "sim/flightmodel/position/true_phi"
 
 
-    target_ele = 5000
+    target_ele = 10000
     target_alt = init_alt + target_ele
-    target_speed = 350
+    target_speed = 1000
 
-    alt_controller = PID(2, 0, 1000000000, setpoint=target_alt)
+    alt_controller = PID(5, 0, 250, setpoint=target_alt)
     spd_controller = PID(5, 1, 1, setpoint=target_speed)
 
     yaw_controller  = PID(1,  0,  10000, setpoint=values_init["sim/flightmodel/position/true_psi"])
-    roll_controller = PID(1,  0,  100000000, setpoint=values_init["sim/flightmodel/position/true_phi"])
+    roll_controller = PID(1,  0,  10000, setpoint=values_init["sim/flightmodel/position/true_phi"])
 
     pitch_trim = 20
     throttle_trim = 1
@@ -86,8 +86,8 @@ if __name__ == '__main__':
         else:
             gear = 1
 
-        if values["sim/flightmodel/position/indicated_airspeed"] > 200:
-            pitch_command = alt_controller(values["sim/flightmodel/misc/h_ind"])/50000
+        if values["sim/flightmodel/position/indicated_airspeed"] > 100:
+            pitch_command = alt_controller(values["sim/flightmodel/misc/h_ind"])/100000
             # print("PITCH", pitch_command)
 
         # if values[pitch_dataref_value] > pitch_trim or values[pitch_dataref_value]< -pitch_trim:
@@ -102,10 +102,10 @@ if __name__ == '__main__':
         # else:
         #     pitch_command = pitch_command
 
-        throttle = spd_controller(values["sim/flightmodel/position/indicated_airspeed"])/1000
+        throttle = spd_controller(values["sim/flightmodel/position/indicated_airspeed"])/10000
 
-        yaw_command = yaw_controller(values[yaw_dataref_value])/10000
-        roll_command = roll_controller(values[roll_dataref_value])/10000
+        yaw_command = yaw_controller(values[yaw_dataref_value])/1000000
+        roll_command = roll_controller(values[roll_dataref_value])/10000000
 
         if throttle > throttle_trim:
             throttle = throttle_trim
@@ -133,7 +133,7 @@ if __name__ == '__main__':
                 % (values["sim/flightmodel/position/latitude"], values["sim/flightmodel/position/longitude"], values["sim/flightmodel/misc/h_ind"], values["sim/flightmodel/position/true_theta"], values["sim/flightmodel/position/true_phi"], values["sim/flightmodel/position/true_psi"]))
         print("AIR SPEED m/s", values["sim/flightmodel/position/indicated_airspeed"])
 
-        # time.sleep(0.1)
+        time.sleep(0.001)
 
         # print(values)
       except XPlaneTimeout:
