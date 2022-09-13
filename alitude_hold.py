@@ -5,6 +5,13 @@ import time
 
 # Example how to use:
 # You need a running xplane in your network. 
+
+def set_datarefs(xp, ref_list):
+  for ref in ref_list:
+    xp.AddDataRef(ref, freq=1000)
+  return xp
+
+
 if __name__ == '__main__':
 
   xp = XPlaneUdp()
@@ -14,41 +21,40 @@ if __name__ == '__main__':
     print(beacon)
     print()
     
-    xp.AddDataRef("sim/flightmodel/position/indicated_airspeed", freq=1000)
-    xp.AddDataRef("sim/flightmodel/position/latitude", freq=1000)
-    xp.AddDataRef("sim/flightmodel/position/longitude", freq=1000)
-    xp.AddDataRef("sim/flightmodel/misc/h_ind",freq=1000)
+    ref_list = [
+    "sim/flightmodel/position/indicated_airspeed",
+    "sim/flightmodel/position/latitude",
+    "sim/flightmodel/position/longitude",
+    "sim/flightmodel/misc/h_ind",
+    "sim/flightmodel/position/true_theta",
+    "sim/flightmodel/position/true_phi",
+    "sim/flightmodel/position/true_psi", 
+    ]
+    set_datarefs(xp, ref_list)
 
-    xp.AddDataRef("sim/flightmodel/position/true_theta", freq=1000)
-    xp.AddDataRef("sim/flightmodel/position/true_phi", freq=1000)
-    xp.AddDataRef("sim/flightmodel/position/true_psi", freq=1000)
+    # heading_control_dataref = "sim/joystick/FC_hdng"
+    # pitch_control_dataref = "sim/joystick/FC_ptch"
+    # roll_control_dataref ="sim/joystick/FC_roll"
 
-    heading_control_dataref = "sim/joystick/FC_hdng"
-    pitch_control_dataref = "sim/joystick/FC_ptch"
-    roll_control_dataref ="sim/joystick/FC_roll"
+    heading_control_dataref = "sim/cockpit2/controls/yoke_heading_ratio"
+    pitch_control_dataref = "sim/cockpit2/controls/yoke_pitch_ratio"
+    roll_control_dataref ="sim/cockpit2/controls/yoke_roll_ratio"
+
+    # sim/cockpit2/controls/total_heading_ratio	float	y	[-1..1]	Total rudder control input (sum of user pedal plus autopilot servo plus artificial stability)
+    # sim/cockpit2/controls/total_pitch_ratio	float	y	[-1..1]	Total pitch control input (sum of user yoke plus autopilot servo plus artificial stability)
+    # sim/cockpit2/controls/total_roll_ratio	float	y	[-1..1]	Total roll control input (sum of user yoke plus autopilot servo plus artificial stability)
 
     gear_dataref = "sim/cockpit2/controls/gear_handle_down"
-
     throttle_dataref = "sim/cockpit2/engine/actuators/throttle_ratio_all"
     parking_brake_dataref = "sim/flightmodel/controls/parkbrake"
-
     speed_brake_dataref= "sim/cockpit2/controls/speedbrake_ratio"
-
-    # xp.AddDataRef(heading_dataref)
-    # xp.AddDataRef(pitch_dataref)
-    # xp.AddDataRef(throttle_dataref)
-    # xp.AddDataRef(parking_brake_dataref)
-    # xp.AddDataRef(gear_dataref)
-    # xp.AddDataRef(roll_dataref)
 
 
     values_init = xp.GetValues()
-
     init_alt = values_init["sim/flightmodel/misc/h_ind"]
-    print("INTIAL ALT", init_alt)
+    print("Initial Altitude: ", init_alt)
 
     values = values_init
-    print(values)
 
     pitch = values["sim/flightmodel/position/true_theta"]
     roll = values["sim/flightmodel/position/true_phi"]
@@ -59,17 +65,18 @@ if __name__ == '__main__':
     roll_dataref_value = "sim/flightmodel/position/true_phi"
 
 
-    target_ele = 10000
+    target_ele = 20000
     target_alt = init_alt + target_ele
-    target_speed = 1000
+    target_speed = 500
 
-    alt_controller = PID(5, 0, 250, setpoint=target_alt)
-    spd_controller = PID(5, 1, 1, setpoint=target_speed)
+    spd_controller = PID(5, 1, 100, setpoint=target_speed)
 
-    yaw_controller  = PID(1,  0,  10000, setpoint=values_init["sim/flightmodel/position/true_psi"])
-    roll_controller = PID(1,  0,  10000, setpoint=values_init["sim/flightmodel/position/true_phi"])
+    # yaw_controller  = PID(1,  0,  1000000, setpoint=values_init["sim/flightmodel/position/true_psi"])
+    # roll_controller = PID(1,  0,  1000000, setpoint=values_init["sim/flightmodel/position/true_phi"])
+    yaw_controller  = PID(1,  0,  3000000, setpoint=169)
+    roll_controller = PID(1,  0,  3000000, setpoint=0)
+    alt_controller  = PID(5,  0,  250,     setpoint=target_alt)
 
-    pitch_trim = 20
     throttle_trim = 1
     pitch_command = 0
     speed_brake = 0
@@ -86,26 +93,12 @@ if __name__ == '__main__':
         else:
             gear = 1
 
-        if values["sim/flightmodel/position/indicated_airspeed"] > 100:
-            pitch_command = alt_controller(values["sim/flightmodel/misc/h_ind"])/100000
-            # print("PITCH", pitch_command)
+        if values["sim/flightmodel/position/indicated_airspeed"] > 150:
+            pitch_command = alt_controller(values["sim/flightmodel/misc/h_ind"])/90000
 
-        # if values[pitch_dataref_value] > pitch_trim or values[pitch_dataref_value]< -pitch_trim:
-        #     print("TRIM?", values[pitch_dataref_value])
-        #     pitch_command = 0
-
-
-        # if pitch_command > 0.1:
-        #     pitch_command = 0.1
-        # elif pitch_command <-0.1:
-        #     pitch_command = -0.1
-        # else:
-        #     pitch_command = pitch_command
-
-        throttle = spd_controller(values["sim/flightmodel/position/indicated_airspeed"])/10000
-
-        yaw_command = yaw_controller(values[yaw_dataref_value])/1000000
-        roll_command = roll_controller(values[roll_dataref_value])/10000000
+        throttle = spd_controller(values["sim/flightmodel/position/indicated_airspeed"])/1000
+        yaw_command = yaw_controller(values[yaw_dataref_value])/5000000
+        roll_command = roll_controller(values[roll_dataref_value])/20000000
 
         if throttle > throttle_trim:
             throttle = throttle_trim
@@ -113,14 +106,13 @@ if __name__ == '__main__':
 
         if values["sim/flightmodel/position/indicated_airspeed"] > target_speed:
             throttle = 0
-            speed_brake = spd_controller(values["sim/flightmodel/position/indicated_airspeed"])
-            # print("BRAKE", speed_brake)
+            speed_brake = spd_controller(values["sim/flightmodel/position/indicated_airspeed"])/10000
+    
 
         xp.WriteDataRef(heading_control_dataref, yaw_command)
         xp.WriteDataRef(pitch_control_dataref, pitch_command)
         xp.WriteDataRef(roll_control_dataref, roll_command)
 
-        # print("SET GEAR")
         xp.WriteDataRef(gear_dataref, gear)
         xp.WriteDataRef(throttle_dataref, throttle)
         xp.WriteDataRef(speed_brake_dataref, speed_brake)
@@ -135,7 +127,6 @@ if __name__ == '__main__':
 
         time.sleep(0.001)
 
-        # print(values)
       except XPlaneTimeout:
         print("XPlane Timeout")
         exit(0)
